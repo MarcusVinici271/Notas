@@ -10,7 +10,8 @@ import TrashCan from './TrashCan';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Header from './Header';
-import { auth, firestore } from './firebase'; 
+import { auth, firestore } from './firebase';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const App = () => {
   const [containers, setContainers] = useState({
