@@ -1,6 +1,6 @@
 ## Aplicação de uma Lista de Tarefas
 
-Usei algumas ferramentas como bootstrap e yarn para desenvolver a aplicação.
+Usei algumas ferramentas como Bootstrap, React e Yarn para desenvolver a aplicação.
 
 Inicialmente desenvolvi pelo Replit, porém devido a algumas limitações, recomendo ferramentas como o VSCode.
 
