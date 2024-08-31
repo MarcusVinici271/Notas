@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+// App.js
+import React, { useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import Container from './Container'; // Importe o componente Container
-import Sidebar from './Sidebar'; // Importe o componente Sidebar
-import TrashCan from './TrashCan'; // Importe o componente TrashCan
-import Header from './Header'; // Importe o componente Header
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import Container from './Container'; 
+import Sidebar from './Sidebar'; 
+import { Button } from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import TrashCan from './TrashCan';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
-import { auth, firestore, GoogleAuthProvider, signInWithPopup, signOut, collection, addDoc, getDocs, doc, deleteDoc } from './firebase'; // Importe o Firebase
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import Header from './Header';
+import { auth, firestore } from './firebase'; 
 
 const App = () => {
   const [containers, setContainers] = useState({
@@ -16,58 +19,47 @@ const App = () => {
     container3: [],
   });
   const [showSidebar, setShowSidebar] = useState(false);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(setUser);
-    return () => unsubscribe();
-  }, []);
 
   const handleCloseSidebar = () => setShowSidebar(false);
   const handleShowSidebar = () => setShowSidebar(true);
 
-  const addNote = async ({ text, date }) => {
+  const addNote = ({ text, date }) => {
     const newNote = {
       id: `note-${Date.now()}`, // Gerar um ID único para a anotação
       text,
       date,
     };
-
-    if (user) {
-      const userNotesRef = collection(firestore, 'users', user.uid, 'notes');
-      await addDoc(userNotesRef, newNote);
-      fetchNotes(); // Atualiza as notas após adicionar uma nova
-    }
-
+    // Adiciona a nova nota ao contêiner 1 por padrão
     setContainers(prevContainers => ({
       ...prevContainers,
       container1: [...prevContainers.container1, newNote],
     }));
   };
 
-  const fetchNotes = async () => {
-    if (user) {
-      const userNotesRef = collection(firestore, 'users', user.uid, 'notes');
-      const snapshot = await getDocs(userNotesRef);
-      const notes = snapshot.docs.map(doc => doc.data());
-      setContainers(prevContainers => ({
-        ...prevContainers,
-        container1: notes,
-      }));
-    }
-  };
-
   const moveItem = (itemId, toContainerId) => {
-    // Implementar a lógica de mover itens
+    const fromContainerId = Object.keys(containers).find(containerId =>
+      containers[containerId].find(item => item.id === itemId)
+    );
+    if (!fromContainerId || fromContainerId === toContainerId) return;
+
+    const item = containers[fromContainerId].find(item => item.id === itemId);
+    const updatedContainers = { ...containers };
+
+    // Remove item from the source container
+    updatedContainers[fromContainerId] = containers[fromContainerId].filter(
+      (item) => item.id !== itemId
+    );
+
+    // Ensure the destination container is an array
+    updatedContainers[toContainerId] = [
+      ...(updatedContainers[toContainerId] || []),
+      item,
+    ];
+
+    setContainers(updatedContainers);
   };
 
-  const removeItem = async (itemId) => {
-    if (user) {
-      const userNotesRef = doc(firestore, 'users', user.uid, 'notes', itemId);
-      await deleteDoc(userNotesRef);
-      fetchNotes(); // Atualiza as notas após remover uma
-    }
-
+  const removeItem = (itemId) => {
     const updatedContainers = { ...containers };
 
     Object.keys(updatedContainers).forEach(containerId => {
@@ -79,81 +71,44 @@ const App = () => {
     setContainers(updatedContainers);
   };
 
-  const handleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Error during sign in:", error);
-    }
-  };
-
-  const handleLogout = () => {
-    signOut(auth);
-  };
-
   return (
-    <DndProvider backend={HTML5Backend}>
-      <Header /> {/* Adiciona o componente Header */}
-      {user ? (
-        <div>
-          <button onClick={handleLogout}>Logout</button>
-          <FontAwesomeIcon
-            icon={faPlus}
-            size="2x"
-            style={{
-              position: 'fixed',
-              bottom: '16px',
-              right: '16px',
-              zIndex: 1000,
-              cursor: 'pointer',
-              backgroundColor: '#007bff',
-              color: '#fff',
-              borderRadius: '50%',
-              padding: '10px',
-            }}
-            onClick={handleShowSidebar}
-          />
-          <Sidebar show={showSidebar} handleClose={handleCloseSidebar} addNote={addNote} />
-          <div style={{ display: 'flex', marginTop: '60px', marginLeft: '16px', marginRight: '16px' }}>
-            <Container
-              id="container1"
-              items={containers.container1}
-              moveItem={moveItem}
-            />
-            <Container
-              id="container2"
-              items={containers.container2}
-              moveItem={moveItem}
-            />
-            <Container
-              id="container3"
-              items={containers.container3}
-              moveItem={moveItem}
-            />
-          </div>
-          <TrashCan removeItem={removeItem} />
-        </div>
-      ) : (
-        <button
-          onClick={handleLogin}
+    <DndProvider backend={HTML5Backend}> {/* Use HTML5Backend */}
+      <Header /> 
+        <FontAwesomeIcon
+          icon={faPlus}
+          size="2x"
           style={{
-            padding: '10px 20px',
-            fontSize: '16px',
-            backgroundColor: '#4285F4',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
             position: 'fixed',
-            top: '16px',
+            bottom: '16px',
             right: '16px',
             zIndex: 1000,
+            cursor: 'pointer',
+            backgroundColor: '#007bff',
+            color: '#fff',
+            borderRadius: '50%',
+            padding: '10px',
           }}
-        >
-          Login with Google
-        </button>
-      )}
+          onClick={handleShowSidebar}
+        />
+        <Sidebar show={showSidebar} handleClose={handleCloseSidebar} addNote={addNote} />
+        <div style={{ display: 'flex', marginTop: '70px' }}>
+        <Container
+          id="container1"
+          items={containers.container1}
+          moveItem={moveItem}
+        />
+        <Container
+          id="container2"
+          items={containers.container2}
+          moveItem={moveItem}
+        />
+        <Container
+          id="container3"
+          items={containers.container3}
+          moveItem={moveItem}
+        />
+      </div>
+       <TrashCan removeItem={removeItem} />
     </DndProvider>
   );
 };
